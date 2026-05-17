@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ecogenie-api.onren
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // 60 seconds - Render free tier needs time to wake up
   headers: { 'Content-Type': 'application/json' },
 });
 
