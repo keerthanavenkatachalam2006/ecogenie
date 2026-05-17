@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const cron = require('node-cron');
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -19,52 +18,35 @@ const weatherRoutes = require('./routes/weatherRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 
+const app = express();
+
 // Connect to database
 connectDB();
-
-const app = express();
 
 // Security middleware
 app.use(helmet());
 
-// CORS
-app.use(
-  cors({
-    origin: [
-      process.env.CLIENT_URL || 'http://localhost:5173',
-      'https://ecogenie.vercel.app',
-      'https://ecogenie-three.vercel.app',
-      /^https:\/\/ecogenie.*\.vercel\.app$/,
-      /^http:\/\/192\.168\.\d+\.\d+/,
-      /^http:\/\/10\.\d+\.\d+\.\d+/,
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+// CORS - allow all origins in production for simplicity
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  windowMs: 15 * 60 * 1000,
+  max: 500,
   message: { success: false, message: 'Too many requests. Please try again later.' },
 });
 app.use('/api/', limiter);
-
-// Auth rate limiting (stricter)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { success: false, message: 'Too many auth attempts. Please try again later.' },
-});
-app.use('/api/auth/', authLimiter);
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Logger
+// Logger in development only
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -75,7 +57,7 @@ app.get('/health', (req, res) => {
     status: 'OK',
     message: 'ECOGENIE API is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'production',
   });
 });
 
@@ -94,18 +76,13 @@ app.use('*', (req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found.` });
 });
 
-// Error handler (must be last)
+// Centralized error handler
 app.use(errorHandler);
 
+// Start server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 ECOGENIE Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Rejection:', err.message);
-  server.close(() => process.exit(1));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 ECOGENIE Server running on port ${PORT}`);
 });
 
 module.exports = app;
