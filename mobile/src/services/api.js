@@ -1,8 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Your PC's local IP — phone and PC must be on same WiFi
-const API_BASE_URL = 'http://192.168.29.135:5000/api';
+// Live deployed backend on Render
+const API_BASE_URL = 'https://ecogenie-api.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
