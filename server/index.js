@@ -33,6 +33,7 @@ app.use(
     origin: [
       process.env.CLIENT_URL || 'http://localhost:5173',
       'https://ecogenie.vercel.app',
+      /^https:\/\/ecogenie.*\.vercel\.app$/,  // all Vercel preview URLs
       /^http:\/\/192\.168\.\d+\.\d+/,
       /^http:\/\/10\.\d+\.\d+\.\d+/,
     ],
